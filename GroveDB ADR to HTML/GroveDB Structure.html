@@ -1,0 +1,167 @@
+﻿<h1 id="grovedb-structure">GroveDB Structure</h1>
+<p>In this document we will provide an overview of grovedb’s structure. </p>
+<h3 id="prerequisite-reading">Prerequisite Reading</h3>
+<p><a href="merk-proofs.md">Merk Proofs</a></p>
+<p>GroveDB consists of a hierarchy of Merk trees. Recall a Merk tree is a merklized AVL tree capable of storing and returning key values in a provable manner.</p>
+<p>When initializing GroveDB, it begins with a single Merk tree referred to as the root tree. This serves as the entry point for accessing the database and the starting point for all subsequent insertions. </p>
+<p>Now, let’s explore the 5 different element types available in GroveDB:</p>
+<ul>
+<li>Item:<ul>
+<li>Items in GroveDB represent arbitrary bytes, allowing for the storage of any type of data within the database</li>
+</ul>
+</li>
+<li>Reference<ul>
+<li>GroveDB supports references, which serve as pointers to other elements within the database</li>
+</ul>
+</li>
+<li>Tree<ul>
+<li>Trees in GroveDB are used to represent sub-merk structures within the hierarchy. They provide a way to organize and group related elements together.</li>
+</ul>
+</li>
+<li>SumItem<ul>
+<li>Similar to an item, a SumItem stores integer numbers exclusively. It is designed to store and retrieve numeric values for calculations or summarizations</li>
+</ul>
+</li>
+<li>SumTree<ul>
+<li>A SumTree in GroveDB functions similarly to a tree but additionally computes the sum of every summable element beneath it. This includes SumItems or other SumTrees within its subtree. It facilitates efficient computation and retrieval of aggregated values.</li>
+</ul>
+</li>
+</ul>
+<h2 id="element-insertion">Element Insertion</h2>
+<p>Recall, at the start grovedb consists of a single empty merk tree known as the root tree, all element insertions starts from here.</p>
+<pre><code class="lang-mermaid">graph LR
+    A((<span class="hljs-name">Root</span> Merk))
+</code></pre>
+<p>To insert an element into GroveDB, you need to specify three essential components:</p>
+<ul>
+<li>The path to the Merk tree where you want to insert the element.</li>
+<li>The key at which you want to insert the element within the specified Merk tree.</li>
+<li>The actual element you intend to insert into GroveDB.</li>
+</ul>
+<p>In the case of the root Merk tree, which is the starting point of GroveDB, the path to the root Merk is represented as an empty path: <strong><code>[]</code></strong>.</p>
+<h3 id="effect-of-insertion-on-grovedb-structure">Effect of Insertion on GroveDB Structure</h3>
+<p>When inserting an Item, Reference, or SumItem into GroveDB, the high-level structure of GroveDB remains unchanged. These elements are added within the root Merk tree without creating any additional Merks. Therefore, there are no structural side effects caused by inserting these elements.</p>
+<p>However, when adding a Tree or SumTree element, the nodes are not only added to the root Merk tree but also new sub-Merks are created within the overall GroveDB structure.</p>
+<p>To provide a clearer understanding, let&#39;s go through an example to illustrate this behavior.</p>
+<h3 id="insertion-example">Insertion Example</h3>
+<p>Initial GroveDB structure:</p>
+<pre><code class="lang-mermaid">graph LR
+    A((<span class="hljs-name">Root</span> Merk))
+</code></pre>
+<p>Insert path = [], key = B, value = Item(”2”)</p>
+<ul>
+<li>we are inserting an Item element with the value &quot;2&quot; into the root Merk tree at key B.</li>
+<li>no subtree is created so the grovedb structure remains as above, what changes is the content of the root merk</li>
+</ul>
+<p>GroveDB Structure: Unchanged</p>
+<p>Root Merk Structure:</p>
+<pre><code class="lang-mermaid">graph TD<span class="hljs-comment">;</span>
+<span class="hljs-number">2</span>[<span class="hljs-string">"key: B, value: Item(2)"</span>]<span class="hljs-comment">;</span>
+</code></pre>
+<p>Insert path = [], key = A value = Item(”1”)</p>
+<ul>
+<li>insert Item element “1” into the root Merk tree at key A</li>
+<li>still no subtree is created, grovedb structure remains the same, root merk is updated.</li>
+</ul>
+<p>GroveDB Structure: Unchanged</p>
+<p>Root Merk Structure:</p>
+<pre><code class="lang-mermaid">graph TD<span class="hljs-comment">;</span>
+<span class="hljs-number">2</span>[<span class="hljs-string">"key: B, value: Item(2)"</span>]<span class="hljs-comment">;</span>
+<span class="hljs-number">2</span>--&gt;<span class="hljs-number">1</span>[<span class="hljs-string">"key: A, value: Item(1)"</span>]<span class="hljs-comment">;</span>
+</code></pre>
+<p>Insert path = [] key = D value = Item(”4”)</p>
+<p>GroveDB Structure: Unchanged</p>
+<p>Root Merk Structure:</p>
+<pre><code class="lang-mermaid">graph TD;
+<span class="hljs-number">2</span>[<span class="hljs-string">"key: B, value: Item(2)"</span>];
+<span class="hljs-number">2</span>--&gt;<span class="hljs-number">1</span>[<span class="hljs-string">"key: A, value: Item(1)"</span>];
+<span class="hljs-number">2</span>--&gt;<span class="hljs-number">4</span>[<span class="hljs-string">"key: D, value: Item(4)"</span>];
+</code></pre>
+<p>Insert path = [] key = C, value = Tree</p>
+<ul>
+<li>Here, we are inserting a Tree element into the root Merk tree at key C. This insertion not only adds the Tree element to the root Merk but also creates a new sub-Merk within GroveDB.</li>
+</ul>
+<p>GroveDB Structure:</p>
+<pre><code class="lang-mermaid">graph TD
+    A((<span class="hljs-name">Root</span> Merk)) --C--&gt; B((<span class="hljs-name">Merk</span> C))
+</code></pre>
+<p>Root Merk Structure:</p>
+<pre><code class="lang-mermaid">graph TD;
+<span class="hljs-number">2</span>[<span class="hljs-string">"key: B, value: Item(2)"</span>];
+<span class="hljs-number">2</span>--&gt;<span class="hljs-number">1</span>[<span class="hljs-string">"key: A, value: Item(1)"</span>];
+<span class="hljs-number">2</span>--&gt;<span class="hljs-number">4</span>[<span class="hljs-string">"key: D, value: Item(4)"</span>];
+<span class="hljs-number">4</span>--&gt;<span class="hljs-number">3</span>[<span class="hljs-string">"key: C, value: Tree"</span>];
+</code></pre>
+<p>Insert path = [] key = E, value = Tree</p>
+<p>GroveDB Structure</p>
+<pre><code class="lang-mermaid">graph TD
+    A((<span class="hljs-name">Root</span> Merk)) --C--&gt; B((<span class="hljs-name">Merk</span> C))
+        A --E--&gt;E((<span class="hljs-name">Merk</span> E))
+</code></pre>
+<p>Root Merk Structure:</p>
+<pre><code class="lang-mermaid">graph TD;
+<span class="hljs-number">2</span>[<span class="hljs-string">"key: B, value: Item(2)"</span>];
+<span class="hljs-number">2</span>--&gt;<span class="hljs-number">1</span>[<span class="hljs-string">"key: A, value: Item(1)"</span>];
+<span class="hljs-number">2</span>--&gt;<span class="hljs-number">4</span>[<span class="hljs-string">"key: D, value: Item(4)"</span>];
+<span class="hljs-number">4</span>--&gt;<span class="hljs-number">3</span>[<span class="hljs-string">"key: C, value: Tree"</span>]; 
+<span class="hljs-number">4</span>--&gt;<span class="hljs-number">5</span>[<span class="hljs-string">"key: E, value: Tree"</span>];
+</code></pre>
+<p>After all insertion operations we now have 3 merks:</p>
+<ul>
+<li>The root merk (path - [])</li>
+<li>Merk C (path - [C])</li>
+<li>Merk E (path - [E])</li>
+</ul>
+<h3 id="root-hash-computation">Root Hash Computation</h3>
+<p>From a high level, the root hash of the entire GroveDB structure is the root hash of the root merk. The root hash should represent a commitment to all data stored in GroveDB.</p>
+<p>Hence we have to ensure that all provable information somehow contributes to the root hash value.</p>
+<p>Recall merk root hash generation:</p>
+<pre><code class="lang-rust"><span class="hljs-comment">// the merk root hash is the node_hash of it's root node</span>
+node<span class="hljs-number">_</span>hash = Hash(kv<span class="hljs-number">_</span>hash, left<span class="hljs-number">_</span>child<span class="hljs-number">_n</span>ode<span class="hljs-number">_</span>hash, right<span class="hljs-number">_</span>child<span class="hljs-number">_n</span>ode<span class="hljs-number">_</span>hash)
+
+
+<span class="hljs-comment">// to compute that we need to compute the kv_hash</span>
+kv<span class="hljs-number">_</span>hash = Hash(key, <span class="hljs-keyword">value</span><span class="hljs-number">_</span>hash)
+
+
+<span class="hljs-comment">// to compute the kv_hash we need to compute the value hash</span>
+<span class="hljs-comment">// which is just the hash of the value</span>
+<span class="hljs-keyword">value</span><span class="hljs-number">_</span>hash = Hash(serialized<span class="hljs-number">_</span>element)
+</code></pre>
+<p>To ensure that all provable information contributes to the root hash value in GroveDB, it is important to modify the value_hash computation for Tree elements. </p>
+<p>Instead of simply hashing the value &quot;serialized_tree_element&quot; we should hash the concatenation of &quot;serialized_tree_element&quot; with the root hash of the sub-Merk associated with that Tree element.</p>
+<p>Here&#39;s an updated version of the merk root hash generation:</p>
+<pre><code class="lang-rust">
+<span class="hljs-comment">// The merk root hash is the node_hash of its root node</span>
+node<span class="hljs-number">_</span>hash = Hash(kv<span class="hljs-number">_</span>hash, left<span class="hljs-number">_</span>child<span class="hljs-number">_n</span>ode<span class="hljs-number">_</span>hash, right<span class="hljs-number">_</span>child<span class="hljs-number">_n</span>ode<span class="hljs-number">_</span>hash)
+
+
+<span class="hljs-comment">// To compute the kv_hash, we need to compute the value_hash</span>
+<span class="hljs-comment">// For Tree elements, we modify the value_hash computation</span>
+<span class="hljs-keyword">if</span> element<span class="hljs-number">_</span>type == Element::Tree {
+    <span class="hljs-keyword">value</span><span class="hljs-number">_</span>hash = Hash(serialized<span class="hljs-number">_</span>tree<span class="hljs-number">_</span>element + root<span class="hljs-number">_</span>hash<span class="hljs-number">_</span><span class="hljs-keyword">of</span><span class="hljs-number">_</span>sub<span class="hljs-number">_m</span>erk)
+} <span class="hljs-keyword">else</span> {
+    <span class="hljs-comment">// For other non-tree elements, we hash the value as usual</span>
+    <span class="hljs-keyword">value</span><span class="hljs-number">_</span>hash = Hash(<span class="hljs-keyword">value</span>)
+}
+
+
+<span class="hljs-comment">// To compute the kv_hash, we hash the key with the modified value_hash</span>
+kv<span class="hljs-number">_</span>hash = Hash(key, <span class="hljs-keyword">value</span><span class="hljs-number">_</span>hash)
+</code></pre>
+<p>This ensures that the relationship between the tree node and the underlying merk is committed to. </p>
+<h3 id="root-hash-propagation">Root Hash Propagation</h3>
+<p>To maintain the integrity of the root hash in GroveDB, we need to update the root hash whenever a change is made to any path within the tree structure. This process involves propagating the updates from the modified Merk tree up to the root node.</p>
+<p>When a change is made to a Merk tree, its root hash is recalculated to reflect the updated data. Subsequently, the Tree node representing that Merk tree in its parent Merk is also updated, triggering a change in the parent&#39;s Merk root hash. This update propagation continues upward, affecting each parent Merk along the path until reaching the root node.</p>
+<p>This ensures that any modifications made within the GroveDB structure are reflected in the root hash, providing a consistent and provable representation of the entire database.</p>
+<h3 id="example">Example</h3>
+<p>Given this GroveDB structure:</p>
+<pre><code class="lang-mermaid">graph TD
+    A((<span class="hljs-name">Root</span> Merk)) --C--&gt; C((<span class="hljs-name">Merk</span> C))
+        A --E--&gt;E((<span class="hljs-name">Merk</span> E))
+        C--M--&gt;M((<span class="hljs-name">Merk</span> M))
+</code></pre>
+<p>When Merk M is updated, its root hash is recalculated to reflect the changes.</p>
+<p>Next, we update the value_hash of the Tree element in Merk C that corresponds to Merk M. This update modifies the root hash of Merk C.</p>
+<p>Finally, we update the value_hash of the Tree element in the Root Merk that corresponds to Merk C.</p>
+<p>This sequence of updates results in the recalculation of the root hash of the Root Merk, which represents the hash of the entire GroveDB structure.</p>
